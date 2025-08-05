@@ -6,11 +6,42 @@
 ```sh
 gleam add working_actors@1
 ```
+
+Below is a sample program which spawns 5 workers to call the `noisy_sleep`
+function. This function simulates workers by sleeping for the number of
+milliseconds in the argument. The function also announces when it starts,
+when it stops, and what the process id of the actor that is running it is.
+
 ```gleam
+import gleam/erlang/process
+import gleam/int
+import gleam/io
+import gleam/list
+import gleam/string
 import working_actors
 
 pub fn main() -> Nil {
-  // TODO: An example of the project in use
+  let l = [5000, 10_000, 5000, 10_000, 2000]
+
+  let responded = working_actors.spawn_workers(5, l, noisy_sleep)
+  io.println("Number of responses: " <> int.to_string(list.length(responded)))
+
+}
+
+pub fn noisy_sleep(i: Int) -> Nil {
+  io.println(
+    "Starting sleep for "
+    <> int.to_string(i)
+    <> " seconds. Pid: "
+    <> string.inspect(process.self()),
+  )
+  process.sleep(i)
+  io.println(
+    "Ending sleep for "
+    <> int.to_string(i)
+    <> " seconds. Pid: "
+    <> string.inspect(process.self()),
+  )
 }
 ```
 

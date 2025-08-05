@@ -1,98 +1,28 @@
+//// working_actors is a simple library for spawning a group of actors
+//// as workers to run a specific function with one of a list of input
+//// arguments and collect the function output into a new list.
+////
+//// Note that the output list is not necessarily in the same order as
+//// the input list, so if it is necessary you should return a record with
+//// both the input argument and the output from the worker function.
+////
+
 import gleam/dict
 import gleam/erlang/process
-import gleam/http/request
-import gleam/http/response
-import gleam/httpc
-import gleam/int
-import gleam/io
 import gleam/list
 import gleam/otp/actor
 import gleam/result
-import gleam/string
 
-pub fn main() -> Nil {
-  url_test()
-  time_test()
-}
-
-pub fn time_test() -> Nil {
-  let l = [5000, 10_000, 5000, 10_000, 2000]
-
-  let responded = spawn_workers(5, l, noisy_sleep)
-  io.println("Number of responses: " <> int.to_string(list.length(responded)))
-}
-
-pub fn noisy_sleep(i: Int) -> Nil {
-  io.println(
-    "Starting sleep for "
-    <> int.to_string(i)
-    <> " seconds. Pid: "
-    <> string.inspect(process.self()),
-  )
-  process.sleep(i)
-  io.println(
-    "Ending sleep for "
-    <> int.to_string(i)
-    <> " seconds. Pid: "
-    <> string.inspect(process.self()),
-  )
-}
-
-pub fn url_test() -> Nil {
-  let urls = [
-    "https://google.com",
-    "https://youtube.com",
-    "https://facebook.com",
-    "https://instagram.com",
-    "https://chatgpt.com",
-    "https://x.com",
-    "https://whatsapp.com",
-    "https://reddit.com",
-    "https://wikipedia.org",
-    "https://amazon.com",
-    "https://pagethatdoesnotexist.org",
-  ]
-
-  spawn_workers(5, urls, get_url)
-  |> list.each(fn(page_response) {
-    case page_response {
-      Ok(r) ->
-        io.println(
-          r.url <> ": " <> int.to_string(string.length(r.page_response.body)),
-        )
-      Error(url) -> io.println("Error retrieving " <> url)
-    }
-  })
-}
-
-type PageResponse {
-  PageResponse(url: String, page_response: response.Response(String))
-}
-
-fn get_url(url: String) -> Result(PageResponse, String) {
-  use req <- result.try(request.to(url) |> result.replace_error(url))
-
-  use resp <- result.map(
-    httpc.configure()
-    |> httpc.follow_redirects(True)
-    |> httpc.dispatch(req)
-    |> result.replace_error(url),
-  )
-
-  PageResponse(url, resp)
-}
-
-// pub fn 
 //
 // Worker Process
 //
 
-pub type WorkerMessage(a, b) {
+type WorkerMessage(a, b) {
   DoWork(input: a, reply_to: process.Subject(ResponseMessage(b)))
   Shutdown
 }
 
-pub fn worker_handle_message(
+fn worker_handle_message(
   state: fn(a) -> b,
   message: WorkerMessage(a, b),
 ) -> actor.Next(fn(a) -> b, WorkerMessage(a, b)) {
@@ -106,7 +36,7 @@ pub fn worker_handle_message(
   }
 }
 
-pub type ResponseMessage(b) {
+type ResponseMessage(b) {
   SubmitWork(fn_respose: b, pid: process.Pid)
 }
 
@@ -114,6 +44,13 @@ pub type ResponseMessage(b) {
 // Worker Functionality
 //
 
+/// Spawn `n_workers` worker processes, each ready to run the work
+/// function `work_function`. A list of arguments to the `work_function`
+/// is provided as the `tasks` list. The functions will be called in
+/// parallel until the `work_function` has been run with every argument
+/// in the `tasks` list. A new list of the function return values will
+/// be returned when all the tasks have run. This list will be in an
+/// arbitrary order.
 pub fn spawn_workers(
   n_workers: Int,
   tasks: List(a),
@@ -135,7 +72,7 @@ pub fn spawn_workers(
   use_workers(tasks, workers, idle_workers, [], process.new_subject())
 }
 
-pub fn use_workers(
+fn use_workers(
   tasks: List(a),
   workers: dict.Dict(process.Pid, process.Subject(WorkerMessage(a, b))),
   idle_workers: List(process.Subject(WorkerMessage(a, b))),
