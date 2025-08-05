@@ -4,7 +4,7 @@ licenses = ["MIT"]
 description = "A library which spawns workers to run a function in parallel."
 target = "erlang"
 
-repository = { type = "github", user = "devries", repo = "working_actor" }
+repository = { type = "github", user = "devries", repo = "working_actors" }
 
 [dependencies]
 gleam_stdlib = ">= 0.44.0 and < 2.0.0"
