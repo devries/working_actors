@@ -87,6 +87,7 @@ fn use_workers(
   // io.println("")
 
   case tasks, idle_workers, dict.size(workers) {
+    _, _, 0 -> function_responses
     [first_task, ..rest_tasks], [first_worker, ..rest_workers], _ -> {
       actor.send(first_worker, DoWork(first_task, reply_to))
       use_workers(
@@ -118,7 +119,6 @@ fn use_workers(
         }
       }
     }
-    [], [], 0 -> function_responses
     [], [], _ -> {
       case process.receive_forever(reply_to) {
         SubmitWork(fn_response, pid) -> {
