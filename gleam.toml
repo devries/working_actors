@@ -1,5 +1,5 @@
 name = "working_actors"
-version = "1.0.0"
+version = "1.1.0"
 licenses = ["MIT"]
 description = "A library which spawns workers to run a function in parallel."
 target = "erlang"
@@ -13,3 +13,4 @@ gleam_otp = ">= 1.1.0 and < 2.0.0"
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"
+gleam_time = ">= 1.4.0 and < 2.0.0"
